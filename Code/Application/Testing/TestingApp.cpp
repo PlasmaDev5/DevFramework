@@ -6,17 +6,17 @@
 #include <Foundation/Logging/Log.h>
 #include <Foundation/Logging/VisualStudioWriter.h>
 #include <Foundation/Time/Clock.h>
-#include <RHISampleLowLevel/RHISampleLowLevel.h>
+#include <Testing/TestingApp.h>
 
 #include <Core/System/Window.h>
 
 static plUInt32 g_uiWindowWidth = 640;
 static plUInt32 g_uiWindowHeight = 480;
 
-class plRHISampleWindow : public plWindow
+class plTestingAppWindow : public plWindow
 {
 public:
-  plRHISampleWindow(plRHISampleApp* pApp)
+    plTestingAppWindow(plTestingApp* pApp)
     : plWindow()
   {
     m_pApp = pApp;
@@ -37,15 +37,15 @@ public:
   bool m_bCloseRequested;
 
 private:
-  plRHISampleApp* m_pApp = nullptr;
+  plTestingApp* m_pApp = nullptr;
 };
 
-plRHISampleApp::plRHISampleApp()
-  : plApplication("RHI Sample")
+plTestingApp::plTestingApp()
+  : plApplication("Render Window")
 {
 }
 
-void plRHISampleApp::AfterCoreSystemsStartup()
+void plTestingApp::AfterCoreSystemsStartup()
 {
   plStringBuilder sProjectDir = ">sdk/Data/Samples/RHISample";
   plStringBuilder sProjectDirResolved;
@@ -81,11 +81,11 @@ void plRHISampleApp::AfterCoreSystemsStartup()
     plWindowCreationDesc WindowCreationDesc;
     WindowCreationDesc.m_Resolution.width = g_uiWindowWidth;
     WindowCreationDesc.m_Resolution.height = g_uiWindowHeight;
-    WindowCreationDesc.m_Title = "RHISample";
+    WindowCreationDesc.m_Title = "Testing";
     WindowCreationDesc.m_bShowMouseCursor = true;
     WindowCreationDesc.m_bClipMouseCursor = false;
     WindowCreationDesc.m_WindowMode = plWindowMode::WindowResizable;
-    m_pWindow = PL_DEFAULT_NEW(plRHISampleWindow, this);
+    m_pWindow = PL_DEFAULT_NEW(plTestingAppWindow, this);
     m_pWindow->Initialize(WindowCreationDesc).IgnoreResult();
   }
 
@@ -95,7 +95,7 @@ void plRHISampleApp::AfterCoreSystemsStartup()
   plStartup::StartupHighLevelSystems();
 }
 
-void plRHISampleApp::BeforeHighLevelSystemsShutdown()
+void plTestingApp::BeforeHighLevelSystemsShutdown()
 {
   // tell the engine that we are about to destroy window and graphics m_pDevice,
   // and that it therefore needs to cleanup anything that depends on that
@@ -108,12 +108,12 @@ void plRHISampleApp::BeforeHighLevelSystemsShutdown()
   PL_DEFAULT_DELETE(m_pWindow);
 }
 
-void plRHISampleApp::OnResize(plUInt32 width, plUInt32 height)
+void plTestingApp::OnResize(plUInt32 width, plUInt32 height)
 {
 
 }
 
-plApplication::Execution plRHISampleApp::Run()
+plApplication::Execution plTestingApp::Run()
 {
   m_pWindow->ProcessWindowMessages();
 
@@ -138,4 +138,4 @@ plApplication::Execution plRHISampleApp::Run()
   return plApplication::Execution::Continue;
 }
 
-PL_CONSOLEAPP_ENTRY_POINT(plRHISampleApp);
+PL_CONSOLEAPP_ENTRY_POINT(plTestingApp);

@@ -16,25 +16,12 @@ CreatorFuncInfo* GetCreatorFuncInfo(plRHIApiType type)
   {
     plStringBuilder sPluginName = "PlasmaRHI";
     if (type == plRHIApiType::kDX12)
-    {
       sPluginName.Append("DX12");
-    }
     else if (type == plRHIApiType::kMetal)
-    {
       sPluginName.Append("Metal");
-    }
-    else if (type == plRHIApiType::kVulkan)
-    {
-      sPluginName.Append("Vulkan");  
-    }
-    else if (type == plRHIApiType::kWebGPU)
-    {
-      sPluginName.Append("WebGPU");  
-    }
     else
-    {
       sPluginName.Append("Vulkan");
-    }
+
     PL_VERIFY(plPlugin::LoadPlugin(sPluginName).Succeeded(), "Renderer plugin '{}' not found", sPluginName);
 
     pFuncInfo = s_CreatorFuncs.GetValue(type);

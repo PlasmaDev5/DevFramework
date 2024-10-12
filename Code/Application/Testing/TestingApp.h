@@ -4,16 +4,16 @@
 #include <Foundation/Application/Application.h>
 #include <Foundation/Types/UniquePtr.h>
 
-class plRHISampleWindow;
+class plTestingAppWindow;
 
 constexpr plUInt32 FRAME_COUNT = 3;
 
-class plRHISampleApp : public plApplication
+class plTestingApp : public plApplication
 {
 public:
   typedef plApplication SUPER;
 
-  plRHISampleApp();
+  plTestingApp();
 
   virtual Execution Run() override;
 
@@ -24,5 +24,5 @@ public:
   void OnResize(plUInt32 width, plUInt32 height);
 
 private:
-  plRHISampleWindow* m_pWindow = nullptr;
+  plTestingAppWindow* m_pWindow = nullptr;
 };
