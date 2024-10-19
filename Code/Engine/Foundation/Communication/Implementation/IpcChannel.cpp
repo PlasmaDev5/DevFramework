@@ -1,6 +1,5 @@
 #include <Foundation/FoundationPCH.h>
 
-#include <Foundation/Communication/Implementation/IpcChannelEnet.h>
 #include <Foundation/Communication/Implementation/MessageLoop.h>
 #include <Foundation/Communication/IpcChannel.h>
 #include <Foundation/Communication/RemoteMessage.h>
@@ -52,14 +51,10 @@ plInternal::NewInstance<plIpcChannel> plIpcChannel::CreatePipeChannel(plStringVi
 
 plInternal::NewInstance<plIpcChannel> plIpcChannel::CreateNetworkChannel(plStringView sAddress, Mode::Enum mode)
 {
-#ifdef BUILDSYSTEM_ENABLE_ENET_SUPPORT
-  return PL_DEFAULT_NEW(plIpcChannelEnet, sAddress, mode);
-#else
   PL_IGNORE_UNUSED(sAddress);
   PL_IGNORE_UNUSED(mode);
   PL_ASSERT_NOT_IMPLEMENTED;
   return nullptr;
-#endif
 }
 
 void plIpcChannel::Connect()

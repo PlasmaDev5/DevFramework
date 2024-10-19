@@ -68,26 +68,14 @@ void plTelemetry::FlushOutgoingQueues()
 
 plResult plTelemetry::ConnectToServer(plStringView sConnectTo)
 {
-#ifdef BUILDSYSTEM_ENABLE_ENET_SUPPORT
-  return OpenConnection(Client, sConnectTo);
-#else
   PL_IGNORE_UNUSED(sConnectTo);
   plLog::SeriousWarning("Enet is not compiled into this build, plTelemetry::ConnectToServer() will be ignored.");
   return PL_FAILURE;
-#endif // BUILDSYSTEM_ENABLE_ENET_SUPPORT
 }
 
 void plTelemetry::CreateServer()
 {
-#ifdef BUILDSYSTEM_ENABLE_ENET_SUPPORT
-  if (OpenConnection(Server).Failed())
-  {
-    plLog::Error("plTelemetry: Failed to open a connection as a server.");
-    s_ConnectionMode = ConnectionMode::None;
-  }
-#else
   plLog::SeriousWarning("Enet is not compiled into this build, plTelemetry::CreateServer() will be ignored.");
-#endif // BUILDSYSTEM_ENABLE_ENET_SUPPORT
 }
 
 void plTelemetry::AcceptMessagesForSystem(plUInt32 uiSystemID, bool bAccept, ProcessMessagesCallback callback, void* pPassThrough)

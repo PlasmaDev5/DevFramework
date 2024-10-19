@@ -13,28 +13,7 @@ target_link_libraries(${PROJECT_NAME}
   PUBLIC
   Foundation
   Texture
-
-  PRIVATE
-  mikktspace
 )
-
-if (PL_3RDPARTY_LUA_SUPPORT)
-
-  target_link_libraries(${PROJECT_NAME}
-    PUBLIC
-    Lua
-  )
-
-endif()
-
-if (PL_3RDPARTY_DUKTAPE_SUPPORT)
-
-  target_link_libraries(${PROJECT_NAME}
-    PUBLIC
-    Duktape
-  )
-
-endif()
 
 if(PL_3RDPARTY_GLFW_SUPPORT)
 
