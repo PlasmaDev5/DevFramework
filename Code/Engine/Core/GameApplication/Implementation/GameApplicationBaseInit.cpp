@@ -3,7 +3,6 @@
 #include <Core/GameApplication/GameApplicationBase.h>
 
 #include <Core/ResourceManager/ResourceManager.h>
-#include <Core/World/WorldModuleConfig.h>
 #include <Foundation/Application/Config/FileSystemConfig.h>
 #include <Foundation/Application/Config/PluginConfig.h>
 #include <Foundation/Communication/Telemetry.h>
@@ -34,43 +33,17 @@ plString plGameApplicationBase::GetProjectDataDirectoryPath() const
 
 void plGameApplicationBase::ExecuteInitFunctions()
 {
-  Init_PlatformProfile_SetPreferred();
   Init_ConfigureTelemetry();
   Init_FileSystem_SetSpecialDirs();
   Init_LoadRequiredPlugins();
   Init_ConfigureAssetManagement();
   Init_FileSystem_ConfigureDataDirs();
-  Init_LoadWorldModuleConfig();
   Init_LoadProjectPlugins();
-  Init_PlatformProfile_LoadForRuntime();
   Init_ConfigureInput();
   Init_ConfigureTags();
   Init_ConfigureCVars();
   Init_SetupGraphicsDevice();
   Init_SetupDefaultResources();
-}
-
-void plGameApplicationBase::Init_PlatformProfile_SetPreferred()
-{
-  if (opt_Profile.IsOptionSpecified())
-  {
-    m_PlatformProfile.SetConfigName(opt_Profile.GetOptionValue(plCommandLineOption::LogMode::AlwaysIfSpecified));
-  }
-  else
-  {
-    m_PlatformProfile.SetConfigName(plPlatformDesc::GetThisPlatformDesc().GetName());
-
-    const plStringBuilder sRuntimeProfileFile(":project/RuntimeConfigs/", m_PlatformProfile.GetConfigName(), ".plProfile");
-
-    if (!plFileSystem::ExistsFile(sRuntimeProfileFile))
-    {
-      plLog::Info("Platform profile '{}' doesn't exist, switching to 'Default'", m_PlatformProfile.GetConfigName());
-
-      m_PlatformProfile.SetConfigName("Default");
-    }
-  }
-
-  m_PlatformProfile.AddMissingConfigs();
 }
 
 void plGameApplicationBase::BaseInit_ConfigureLogging()
@@ -178,25 +151,12 @@ void plGameApplicationBase::Init_FileSystem_ConfigureDataDirs()
   }
 }
 
-void plGameApplicationBase::Init_LoadWorldModuleConfig()
-{
-  plWorldModuleConfig worldModuleConfig;
-  worldModuleConfig.Load();
-  worldModuleConfig.Apply();
-}
 
 void plGameApplicationBase::Init_LoadProjectPlugins()
 {
   plApplicationPluginConfig appPluginConfig;
   appPluginConfig.Load();
   appPluginConfig.Apply();
-}
-
-void plGameApplicationBase::Init_PlatformProfile_LoadForRuntime()
-{
-  const plStringBuilder sRuntimeProfileFile(":project/RuntimeConfigs/", m_PlatformProfile.GetConfigName(), ".plProfile");
-  m_PlatformProfile.AddMissingConfigs();
-  m_PlatformProfile.LoadForRuntime(sRuntimeProfileFile).IgnoreResult();
 }
 
 void plGameApplicationBase::Init_ConfigureInput() {}

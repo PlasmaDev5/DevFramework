@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Core/Configuration/PlatformProfile.h>
-#include <Core/Console/ConsoleFunction.h>
 #include <Core/GameApplication/WindowOutputTargetBase.h>
 #include <Core/GameState/GameStateBase.h>
 #include <Core/System/Window.h>
@@ -66,62 +64,6 @@ protected:
   static plGameApplicationBase* s_pGameApplicationBaseInstance;
 
   ///@}
-  /// \name Capturing Data
-  ///@{
-
-public:
-  /// \brief Does a profiling capture and writes it to disk at ':appdata'
-  void TakeProfilingCapture();
-
-  /// \brief Schedules a screenshot to be taken at the end of the frame.
-  ///
-  /// After taking a screenshot, StoreScreenshot() is executed, which may decide where to write the result to.
-  void TakeScreenshot();
-
-protected:
-  /// \brief Called with the result from taking a screenshot. The default implementation writes the image to disk at ':appdata/Screenshots'
-  virtual void StoreScreenshot(plImage&& image, plStringView sContext = {});
-
-  void ExecuteTakeScreenshot(plWindowOutputTargetBase* pOutputTarget, plStringView sContext = {});
-
-  bool m_bTakeScreenshot = false;
-
-  /// expose TakeScreenshot() as a console function
-  plConsoleFunction<void()> m_ConFunc_TakeScreenshot;
-
-  ///@}
-  /// \name Frame Captures
-  ///@{
-
-public:
-  /// \brief Schedules a frame capture if the corresponding plugin is loaded.
-  ///
-  /// If continuous capture mode is enabled the currently running frame capture is persisted (and not discarded).
-  /// Otherwise, the next frame will be captured and persisted.
-  void CaptureFrame();
-
-  /// \brief Controls if frame captures are taken continuously (without being persisted) or only on-demand.
-  ///
-  /// If continuous frame capture is enabled, calling CaptureFrame() will persist the result of the frame capture that is
-  /// currently in progress. If continuous frame capture is disabled, CaptureFrame() will capture and persist the next frame.
-  /// Note that continuous capture mode comes with a performance cost, but allows the user to decide on-the-fly if the current
-  /// frame capture is to be persisted, e.g., when a unit test image comparison fails.
-  void SetContinuousFrameCapture(bool bEnable);
-  bool GetContinousFrameCapture() const;
-
-  /// \brief Get the absolute base output path for frame captures.
-  virtual plResult GetAbsFrameCaptureOutputPath(plStringBuilder& ref_sOutputPath);
-
-protected:
-  void ExecuteFrameCapture(plWindowHandle targetWindowHandle, plStringView sContext = {});
-
-  bool m_bContinuousFrameCapture = false;
-  bool m_bCaptureFrame = false;
-
-  /// expose CaptureFrame() as a console function
-  plConsoleFunction<void()> m_ConFunc_CaptureFrame;
-
-  ///@}
   /// \name GameState
   ///@{
 public:
@@ -171,17 +113,6 @@ protected:
   plWorld* m_pWorldLinkedWithGameState = nullptr;
 
   ///@}
-  /// \name Platform Profile
-  ///@{
-public:
-  /// \brief Returns the plPlatformProfile that has been loaded for this application
-  const plPlatformProfile& GetPlatformProfile() const { return m_PlatformProfile; }
-
-
-protected:
-  plPlatformProfile m_PlatformProfile;
-
-  ///@}
   /// \name Application Startup
   ///@{
 protected:
@@ -216,15 +147,12 @@ protected:
 
   /// \brief Executes all 'Init_' functions. Typically done after core system startup
   virtual void ExecuteInitFunctions();
-  virtual void Init_PlatformProfile_SetPreferred();
   virtual void Init_ConfigureTelemetry();
   virtual void Init_FileSystem_SetSpecialDirs();
   virtual void Init_LoadRequiredPlugins();
   virtual void Init_ConfigureAssetManagement();
   virtual void Init_FileSystem_ConfigureDataDirs();
-  virtual void Init_LoadWorldModuleConfig();
   virtual void Init_LoadProjectPlugins();
-  virtual void Init_PlatformProfile_LoadForRuntime();
   virtual void Init_ConfigureInput();
   virtual void Init_ConfigureTags();
   virtual void Init_ConfigureCVars();

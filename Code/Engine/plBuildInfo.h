@@ -4,7 +4,7 @@
 
 #pragma once
 
-#define PL_GIT_COMMIT_HASH_SHORT a23ee6aa0cbf
-#define PL_GIT_COMMIT_HASH_LONG a23ee6aa0cbf1eafdd210f9118a1af81adf6c30b
+#define PL_GIT_COMMIT_HASH_SHORT 97759154fd9d
+#define PL_GIT_COMMIT_HASH_LONG 97759154fd9db9d8e35908a7bbde8d420316dfbb
 #define PL_GIT_BRANCH_NAME "main"
 

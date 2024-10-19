@@ -3,7 +3,6 @@
 #include <Core/ActorSystem/ActorManager.h>
 #include <Core/GameApplication/GameApplicationBase.h>
 #include <Core/Input/InputManager.h>
-#include <Core/Interfaces/FrameCaptureInterface.h>
 #include <Core/ResourceManager/ResourceManager.h>
 #include <Core/System/Window.h>
 #include <Foundation/Communication/GlobalEvent.h>
@@ -23,8 +22,6 @@ plGameApplicationBase* plGameApplicationBase::s_pGameApplicationBaseInstance = n
 
 plGameApplicationBase::plGameApplicationBase(plStringView sAppName)
   : plApplication(sAppName)
-  , m_ConFunc_TakeScreenshot("TakeScreenshot", "()", plMakeDelegate(&plGameApplicationBase::TakeScreenshot, this))
-  , m_ConFunc_CaptureFrame("CaptureFrame", "()", plMakeDelegate(&plGameApplicationBase::CaptureFrame, this))
 {
   s_pGameApplicationBaseInstance = this;
 }
@@ -39,206 +36,6 @@ void AppendCurrentTimestamp(plStringBuilder& out_sString)
   const plDateTime dt = plDateTime::MakeFromTimestamp(plTimestamp::CurrentTimestamp());
 
   out_sString.AppendFormat("_{0}-{1}-{2}_{3}-{4}-{5}-{6}", dt.GetYear(), plArgU(dt.GetMonth(), 2, true), plArgU(dt.GetDay(), 2, true), plArgU(dt.GetHour(), 2, true), plArgU(dt.GetMinute(), 2, true), plArgU(dt.GetSecond(), 2, true), plArgU(dt.GetMicroseconds() / 1000, 3, true));
-}
-
-void plGameApplicationBase::TakeProfilingCapture()
-{
-  class WriteProfilingDataTask final : public plTask
-  {
-  public:
-    plProfilingSystem::ProfilingData m_profilingData;
-
-    WriteProfilingDataTask() = default;
-    ~WriteProfilingDataTask() = default;
-
-  private:
-    virtual void Execute() override
-    {
-      plStringBuilder sPath(":appdata/Profiling/", plApplication::GetApplicationInstance()->GetApplicationName());
-      AppendCurrentTimestamp(sPath);
-      sPath.Append(".json");
-
-      plFileWriter fileWriter;
-      if (fileWriter.Open(sPath) == PL_SUCCESS)
-      {
-        m_profilingData.Write(fileWriter).IgnoreResult();
-        plLog::Info("Profiling capture saved to '{0}'.", fileWriter.GetFilePathAbsolute().GetData());
-      }
-      else
-      {
-        plLog::Error("Could not write profiling capture to '{0}'.", sPath);
-      }
-
-#if PL_ENABLED(PL_PLATFORM_WINDOWS_DESKTOP)
-
-      plStringBuilder sTracyPath = plOSFile::GetApplicationDirectory();
-      sTracyPath.AppendPath("../../../Data/Tools/Precompiled/import-chrome.exe");
-      sTracyPath.MakeCleanPath();
-
-      plStringBuilder sOutputPath(":appdata/Profiling/", plApplication::GetApplicationInstance()->GetApplicationName());
-      AppendCurrentTimestamp(sOutputPath);
-      sOutputPath.Append(".tracy");
-
-      plStringBuilder sAbsPath;
-      plStringBuilder sAbsOutputPath;
-
-      if(plFileSystem::ResolvePath(sPath, &sAbsPath, nullptr).Succeeded() && plFileSystem::ResolvePath(sOutputPath, &sAbsOutputPath, nullptr).Succeeded())
-      {
-        plProcessOptions options;
-        options.m_sProcess = sTracyPath;
-        options.AddArgument(sAbsPath);
-        options.AddArgument(sAbsOutputPath);
-
-        if (plProcess::Execute(options).Failed())
-        {
-          plLog::Error("Failed to convert chrome capture to tracy");
-        }
-
-        plLog::Info("Tracy capture saved to '{0}'.", sAbsOutputPath);
-      }
-#endif
-    }
-  };
-
-
-  plSharedPtr<WriteProfilingDataTask> pWriteProfilingDataTask = PL_DEFAULT_NEW(WriteProfilingDataTask);
-  pWriteProfilingDataTask->ConfigureTask("Write Profiling Data", plTaskNesting::Never);
-  plProfilingSystem::Capture(pWriteProfilingDataTask->m_profilingData);
-
-  plTaskSystem::StartSingleTask(pWriteProfilingDataTask, plTaskPriority::LongRunning);
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-void plGameApplicationBase::TakeScreenshot()
-{
-  m_bTakeScreenshot = true;
-}
-
-void plGameApplicationBase::StoreScreenshot(plImage&& image, plStringView sContext /*= {} */)
-{
-  class WriteFileTask final : public plTask
-  {
-  public:
-    plImage m_Image;
-    plStringBuilder m_sPath;
-
-    WriteFileTask() = default;
-    ~WriteFileTask() = default;
-
-  private:
-    virtual void Execute() override
-    {
-      // get rid of Alpha channel before saving
-      m_Image.Convert(plImageFormat::R8G8B8_UNORM_SRGB).IgnoreResult();
-
-      if (m_Image.SaveTo(m_sPath).Succeeded())
-      {
-        plLog::Info("Screenshot: '{0}'", m_sPath);
-      }
-    }
-  };
-
-  plSharedPtr<WriteFileTask> pWriteTask = PL_DEFAULT_NEW(WriteFileTask);
-  pWriteTask->ConfigureTask("Write Screenshot", plTaskNesting::Never);
-  pWriteTask->m_Image.ResetAndMove(std::move(image));
-
-  pWriteTask->m_sPath.SetFormat(":appdata/Screenshots/{0}", plApplication::GetApplicationInstance()->GetApplicationName());
-  AppendCurrentTimestamp(pWriteTask->m_sPath);
-  pWriteTask->m_sPath.Append(sContext);
-  pWriteTask->m_sPath.Append(".png");
-
-  // we move the file writing off to another thread to save some time
-  // if we moved it to the 'FileAccess' thread, writing a screenshot would block resource loading, which can reduce game performance
-  // 'LongRunning' will give it even less priority and let the task system do them in parallel to other things
-  plTaskSystem::StartSingleTask(pWriteTask, plTaskPriority::LongRunning);
-}
-
-void plGameApplicationBase::ExecuteTakeScreenshot(plWindowOutputTargetBase* pOutputTarget, plStringView sContext /* = {} */)
-{
-  if (m_bTakeScreenshot)
-  {
-    PL_PROFILE_SCOPE("ExecuteTakeScreenshot");
-    plImage img;
-    if (pOutputTarget->CaptureImage(img).Succeeded())
-    {
-      StoreScreenshot(std::move(img), sContext);
-    }
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-void plGameApplicationBase::CaptureFrame()
-{
-  m_bCaptureFrame = true;
-}
-
-void plGameApplicationBase::SetContinuousFrameCapture(bool bEnable)
-{
-  m_bContinuousFrameCapture = bEnable;
-}
-
-bool plGameApplicationBase::GetContinousFrameCapture() const
-{
-  return m_bContinuousFrameCapture;
-}
-
-
-plResult plGameApplicationBase::GetAbsFrameCaptureOutputPath(plStringBuilder& ref_sOutputPath)
-{
-  plStringBuilder sPath = ":appdata/FrameCaptures/Capture_";
-  AppendCurrentTimestamp(sPath);
-  return plFileSystem::ResolvePath(sPath, &ref_sOutputPath, nullptr);
-}
-
-void plGameApplicationBase::ExecuteFrameCapture(plWindowHandle targetWindowHandle, plStringView sContext /*= {} */)
-{
-  plFrameCaptureInterface* pCaptureInterface = plSingletonRegistry::GetSingletonInstance<plFrameCaptureInterface>();
-  if (!pCaptureInterface)
-  {
-    return;
-  }
-
-  PL_PROFILE_SCOPE("ExecuteFrameCapture");
-  // If we still have a running capture (i.e., if no one else has taken the capture so far), finish it
-  if (pCaptureInterface->IsFrameCapturing())
-  {
-    if (m_bCaptureFrame)
-    {
-      plStringBuilder sOutputPath;
-      if (GetAbsFrameCaptureOutputPath(sOutputPath).Succeeded())
-      {
-        sOutputPath.Append(sContext);
-        pCaptureInterface->SetAbsCaptureFilePathTemplate(sOutputPath);
-      }
-
-      pCaptureInterface->EndFrameCaptureAndWriteOutput(targetWindowHandle);
-
-      plStringBuilder stringBuilder;
-      if (pCaptureInterface->GetLastAbsCaptureFileName(stringBuilder).Succeeded())
-      {
-        plLog::Info("Frame captured: '{}'", stringBuilder);
-      }
-      else
-      {
-        plLog::Warning("Frame capture failed!");
-      }
-      m_bCaptureFrame = false;
-    }
-    else
-    {
-      pCaptureInterface->EndFrameCaptureAndDiscardResult(targetWindowHandle);
-    }
-  }
-
-  // Start capturing the next frame if
-  // (a) we want to capture the very next frame, or
-  // (b) we capture every frame and later decide if we want to persist or discard it.
-  if (m_bCaptureFrame || m_bContinuousFrameCapture)
-  {
-    pCaptureInterface->StartFrameCapture(targetWindowHandle);
-  }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -574,9 +371,6 @@ void plGameApplicationBase::Run_FinishFrame()
 
   // if many messages have been logged, make sure they get written to disk
   plLog::Flush(100, plTime::MakeFromSeconds(10));
-
-  // reset this state
-  m_bTakeScreenshot = false;
 }
 
 void plGameApplicationBase::UpdateFrameTime()
