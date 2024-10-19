@@ -182,6 +182,16 @@ function(pl_add_target_folder_as_include_dir TARGET_NAME TARGET_FOLDER)
 endfunction()
 
 # #####################################
+# ## pl_add_target_folder_as_include_dir_interface(<target> <path-to-target>)
+# #####################################
+function(pl_add_target_folder_as_include_dir_interface TARGET_NAME TARGET_FOLDER)
+	get_filename_component(PARENT_DIR ${TARGET_FOLDER} DIRECTORY)
+
+	# target_include_directories(${TARGET_NAME} PRIVATE "${TARGET_FOLDER}")
+	target_include_directories(${TARGET_NAME} INTERFACE "${PARENT_DIR}")
+endfunction()
+
+# #####################################
 # ## pl_set_common_target_definitions(<target>)
 # #####################################
 function(pl_set_common_target_definitions TARGET_NAME)
@@ -217,6 +227,37 @@ function(pl_set_common_target_definitions TARGET_NAME)
 
 	# on Windows, make sure to use the Unicode API
 	target_compile_definitions(${TARGET_NAME} PUBLIC UNICODE _UNICODE)
+endfunction()
+
+# #####################################
+# ## pl_set_common_target_definitions_interface(<target>)
+# #####################################
+function(pl_set_common_target_definitions_interface TARGET_NAME)
+	pl_pull_all_vars()
+
+	# set the BUILDSYSTEM_COMPILE_ENGINE_AS_DLL definition
+	if(PLASMA_COMPILE_ENGINE_AS_DLL)
+		target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_COMPILE_ENGINE_AS_DLL)
+	endif()
+
+	target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_SDKVERSION_MAJOR="${PLASMA_CMAKE_SDKVERSION_MAJOR}")
+	target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_SDKVERSION_MINOR="${PLASMA_CMAKE_SDKVERSION_MINOR}")
+	target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_SDKVERSION_PATCH="${PLASMA_CMAKE_SDKVERSION_PATCH}")
+
+	# set the BUILDSYSTEM_BUILDTYPE definition
+	target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_BUILDTYPE="${PLASMA_CMAKE_GENERATOR_CONFIGURATION}")
+	target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_BUILDTYPE_${PLASMA_CMAKE_GENERATOR_CONFIGURATION})
+
+	# set the BUILDSYSTEM_BUILDING_XYZ_LIB definition
+	string(TOUPPER ${TARGET_NAME} PROJECT_NAME_UPPER)
+	target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_BUILDING_${PROJECT_NAME_UPPER}_LIB)
+
+	if(PLASMA_BUILD_VULKAN)
+		target_compile_definitions(${TARGET_NAME} INTERFACE BUILDSYSTEM_ENABLE_VULKAN_SUPPORT)
+	endif()
+
+	# on Windows, make sure to use the Unicode API
+	target_compile_definitions(${TARGET_NAME} INTERFACE UNICODE _UNICODE)
 endfunction()
 
 # #####################################

@@ -1,5 +1,5 @@
 # #####################################
-# ## pl_create_target(<LIBRARY | APPLICATION> <target-name> [NO_PCH] [NO_UNITY] [NO_QT] [ALL_SYMBOLS_VISIBLE] [EXCLUDE_FOLDER_FOR_UNITY <relative-folder>...])
+# ## pl_create_target(<LIBRARY | APPLICATION | INTERFACE> <target-name> [NO_PCH] [NO_UNITY] [NO_QT] [ALL_SYMBOLS_VISIBLE] [EXCLUDE_FOLDER_FOR_UNITY <relative-folder>...])
 # #####################################
 
 macro(pl_create_target TYPE TARGET_NAME)
@@ -74,7 +74,24 @@ macro(pl_create_target TYPE TARGET_NAME)
 		if(COMMAND pl_platformhook_set_application_properties)
 			pl_platformhook_set_application_properties(${TARGET_NAME})
 		endif()
+    elseif(${TYPE} STREQUAL "INTERFACE")
+		message(STATUS "Interface Library: ${TARGET_NAME}")
+		add_library(${TARGET_NAME} INTERFACE "${ALL_SOURCE_FILES}")
 
+		if(ARG_NO_PL_PREFIX)
+            # on some platforms like linux there is a default prefix like "lib".
+            # We don't want that as it confuses our plugin system.
+            set_target_properties(${TARGET_NAME} PROPERTIES IMPORT_PREFIX "")
+            set_target_properties(${TARGET_NAME} PROPERTIES PREFIX "")
+        else()
+            pl_add_output_pl_prefix(${TARGET_NAME})
+        endif()
+
+        if(COMMAND pl_platformhook_set_library_properties)
+            pl_platformhook_set_library_properties(${TARGET_NAME})
+        endif()
+        
+		pl_uwp_fix_library_properties(${TARGET_NAME} "${ALL_SOURCE_FILES}")
 	else()
 		message(FATAL_ERROR "pl_create_target: Missing argument to specify target type. Pass in 'APP' or 'LIB'.")
 	endif()
@@ -100,12 +117,18 @@ macro(pl_create_target TYPE TARGET_NAME)
 		pl_android_add_default_content(${TARGET_NAME})
 	endif()
 
-	pl_add_target_folder_as_include_dir(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR})
+	if(${TYPE} STREQUAL "INTERFACE")
+		pl_add_target_folder_as_include_dir_interface(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR})
 
-	pl_set_common_target_definitions(${TARGET_NAME})
+		pl_set_common_target_definitions_interface(${TARGET_NAME})
 
-	pl_set_build_flags(${TARGET_NAME} ${ARGN})
+	else()
+		pl_add_target_folder_as_include_dir(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR})
 
+		pl_set_common_target_definitions(${TARGET_NAME})
+
+		pl_set_build_flags(${TARGET_NAME} ${ARGN})
+	endif()
 	# On linux we want all symbols to be hidden by default. We manually "export" them.
 	if(PL_COMPILE_ENGINE_AS_DLL AND PL_CMAKE_PLATFORM_LINUX AND NOT ARG_ALL_SYMBOLS_VISIBLE)
 		# PLATFORM-TODO (use general hook as above?)

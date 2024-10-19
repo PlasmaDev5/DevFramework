@@ -14,7 +14,7 @@ CreatorFuncInfo* GetCreatorFuncInfo(plRHIApiType type)
   auto pFuncInfo = s_CreatorFuncs.GetValue(type);
   if (pFuncInfo == nullptr)
   {
-    plStringBuilder sPluginName = "PlasmaRHI";
+    plStringBuilder sPluginName = "plRHI";
     if (type == plRHIApiType::kDX12)
       sPluginName.Append("DX12");
     else if (type == plRHIApiType::kMetal)

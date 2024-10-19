@@ -293,14 +293,19 @@ struct plRHIShaderDesc
   //plDynamicArray<plUInt8> blob;
   //plSharedPtr<plRHIShaderReflection> reflection;
 
-  plString shaderPath;
-  plString entrypoint;
+  plStringView shaderPath;
+  plStringView entrypoint;
   plRHIShaderType type;
-  plString model;
+  plStringView model;
   std::map<plString, plString> define;
 
-  plRHIShaderDesc(const plString& shaderpath, const plString& entrypoint, plRHIShaderType type, const plString& model)
-    : shaderPath(shaderPath)
+  plRHIShaderDesc()
+    : type(plRHIShaderType::kUnknown)
+  {
+    
+  }
+  plRHIShaderDesc(plStringView inputPath, plStringView entrypoint, plRHIShaderType type, plStringView model)
+    : shaderPath(inputPath)
     , entrypoint(entrypoint)
     , type(type)
     , model(model)
